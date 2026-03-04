@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Premium Card</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ─────────────────────────────────────────
+       DESIGN TOKENS
+    ───────────────────────────────────────── */
+    :root {
+      --card-bg:        #111114;
+      --card-surface:   #18181c;
+      --card-accent:    #4f6ef7;        /* single accent — calm indigo  */
+      --card-accent-2:  #7c3aed;        /* secondary — deep violet      */
+      --card-radius:    16px;
+      --card-speed:     6s;             /* border rotation period       */
+      --card-width:     200px;
+      --card-height:    268px;
+      --border-gap:     1px;            /* inner inset for border ring  */
+    }
+
+    /* ─────────────────────────────────────────
+       PAGE SHELL
+    ───────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 48px;
+      flex-wrap: wrap;
+      padding: 80px 40px;
+      background: #0c0c0f;
+      font-family: 'Geist', system-ui, sans-serif;
+    }
+
+    /* ─────────────────────────────────────────
+       CARD
+    ───────────────────────────────────────── */
+    .card {
+      position: relative;
+      width:  var(--card-width);
+      height: var(--card-height);
+      border-radius: var(--card-radius);
+      cursor: pointer;
+      animation: cardEnter .6s cubic-bezier(.22,1,.36,1) both;
+      will-change: transform;
+      transition:
+        transform  .5s cubic-bezier(.34,1.4,.64,1),
+        box-shadow .5s cubic-bezier(.34,1.4,.64,1);
+    }
+
+    .card:hover {
+      transform: translateY(-6px) scale(1.03);
+      box-shadow:
+        0   2px   8px  rgba(0,0,0,.45),
+        0  16px  48px  rgba(0,0,0,.35),
+        0   0   80px  rgba(79,110,247,.10);
+    }
+
+    /* ── Rotating gradient border ──────────────
+       Lives behind everything; clipped by the
+       card's own border-radius.
+    ───────────────────────────────────────── */
+    .card__border {
+      position: absolute;
+      inset: 0;
+      border-radius: var(--card-radius);
+      overflow: hidden;
+      /* opacity off by default */
+      opacity: 0;
+      transition: opacity .5s ease;
+    }
+
+    .card:hover .card__border { opacity: 1; }
+
+    /* The spinning gradient rod */
+    .card__border::before {
+      content: "";
+      position: absolute;
+      /* Oversized so corners are always covered */
+      inset: -60%;
+      background: conic-gradient(
+        from 0deg,
+        transparent       0%,
+        transparent      35%,
+        var(--card-accent)  45%,
+        var(--card-accent-2) 55%,
+        transparent      65%,
+        transparent     100%
+      );
+      animation: borderSpin var(--card-speed) linear infinite;
+      animation-play-state: paused;
+      will-change: transform;
+    }
+
+    .card:hover .card__border::before {
+      animation-play-state: running;
+    }
+
+    /* Mask: punches out the interior, leaving only a thin border ring */
+    .card__border::after {
+      content: "";
+      position: absolute;
+      inset: var(--border-gap);
+      border-radius: calc(var(--card-radius) - var(--border-gap));
+      background: var(--card-bg);
+    }
+
+    /* ── Inner surface ──────────────────────── */
+    .card__inner {
+      position: relative;
+      inset: var(--border-gap);
+      width:  calc(100% - calc(var(--border-gap) * 2));
+      height: calc(100% - calc(var(--border-gap) * 2));
+      border-radius: calc(var(--card-radius) - var(--border-gap));
+      background: var(--card-surface);
+      z-index: 2;
+
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 24px;
+      gap: 8px;
+
+      /* Resting shadow (lighter) — transitions to hover state via .card */
+      box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.04),
+        0 1px 3px rgba(0,0,0,.4);
+
+      transition: background .5s ease;
+    }
+
+    .card:hover .card__inner {
+      background: #1c1c22;
+    }
+
+    /* ── Glow wash that appears on hover ─────── */
+    .card__glow {
+      position: absolute;
+      inset: 0;
+      border-radius: calc(var(--card-radius) - var(--border-gap));
+      background: radial-gradient(
+        ellipse 80% 60% at 50% 0%,
+        rgba(79,110,247,.09) 0%,
+        transparent 70%
+      );
+      opacity: 0;
+      transition: opacity .5s ease;
+      pointer-events: none;
+      z-index: 3;
+    }
+    .card:hover .card__glow { opacity: 1; }
+
+    /* ── Content ────────────────────────────── */
+    .card__content {
+      position: relative;
+      z-index: 4;
+    }
+
+    .card__label {
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--card-accent);
+      opacity: .7;
+      margin-bottom: 6px;
+    }
+
+    .card__title {
+      font-size: 16px;
+      font-weight: 500;
+      color: rgba(255,255,255,.92);
+      line-height: 1.35;
+      letter-spacing: -.01em;
+    }
+
+    .card__sub {
+      font-size: 12px;
+      font-weight: 300;
+      color: rgba(255,255,255,.38);
+      line-height: 1.5;
+      margin-top: 4px;
+    }
+
+    /* ── Top icon area ──────────────────────── */
+    .card__icon {
+      position: absolute;
+      top: 28px;
+      left: 24px;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: rgba(79,110,247,.12);
+      border: 1px solid rgba(79,110,247,.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .4s ease, border-color .4s ease;
+      z-index: 4;
+    }
+    .card:hover .card__icon {
+      background: rgba(79,110,247,.18);
+      border-color: rgba(79,110,247,.32);
+    }
+    .card__icon svg {
+      width: 16px; height: 16px;
+      stroke: var(--card-accent);
+      stroke-width: 1.5;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ─────────────────────────────────────────
+       KEYFRAMES
+    ───────────────────────────────────────── */
+    @keyframes borderSpin {
+      from { transform: rotate(0deg);   }
+      to   { transform: rotate(360deg); }
+    }
+
+    @keyframes cardEnter {
+      from { opacity: 0; transform: translateY(16px) scale(.97); }
+      to   { opacity: 1; transform: translateY(0)    scale(1);   }
+    }
+
+    /* ─────────────────────────────────────────
+       DEMO VARIANTS
+    ───────────────────────────────────────── */
+    .card--violet {
+      --card-accent:   #a78bfa;
+      --card-accent-2: #6d28d9;
+    }
+    .card--teal {
+      --card-accent:   #2dd4bf;
+      --card-accent-2: #0891b2;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Card 1 — Indigo (default) -->
+  <div class="card">
+    <div class="card__border"></div>
+    <div class="card__inner">
+      <div class="card__icon">
+        <svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      </div>
+      <div class="card__glow"></div>
+      <div class="card__content">
+        <p class="card__label">Analytics</p>
+        <h3 class="card__title">Real-time<br>Insights</h3>
+        <p class="card__sub">Monitor performance at every layer.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2 — Violet -->
+  <div class="card card--violet" style="animation-delay:.1s">
+    <div class="card__border"></div>
+    <div class="card__inner">
+      <div class="card__icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      </div>
+      <div class="card__glow"></div>
+      <div class="card__content">
+        <p class="card__label">Platform</p>
+        <h3 class="card__title">Modular<br>Components</h3>
+        <p class="card__sub">Build faster with composable blocks.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3 — Teal -->
+  <div class="card card--teal" style="animation-delay:.2s">
+    <div class="card__border"></div>
+    <div class="card__inner">
+      <div class="card__icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+      </div>
+      <div class="card__glow"></div>
+      <div class="card__content">
+        <p class="card__label">Uptime</p>
+        <h3 class="card__title">99.99%<br>Reliability</h3>
+        <p class="card__sub">Always on, globally distributed.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cursor-follow lighting (lightweight JS, no layout thrashing) -->
+  <script>
+    document.querySelectorAll('.card').forEach(card => {
+      card.addEventListener('mousemove', e => {
+        const { left, top, width, height } = card.getBoundingClientRect();
+        const x = ((e.clientX - left) / width)  * 100;
+        const y = ((e.clientY - top)  / height) * 100;
+        card.querySelector('.card__glow').style.background =
+          `radial-gradient(ellipse 70% 60% at ${x}% ${y}%,
+            rgba(79,110,247,.13) 0%, transparent 70%)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.querySelector('.card__glow').style.background = '';
+      });
+    });
+  </script>
+
+</body>
+</html>
